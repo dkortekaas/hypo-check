@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maximale Hypotheek Berekener</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+  :root {
+    --bg:#0f1117;--surface:#181c26;--surface2:#1e2433;--border:#2a3045;
+    --accent:#4f8ef7;--accent2:#7eb8f5;--gold:#d4a843;--text:#e8eaf0;
+    --muted:#8892a4;--green:#3ecf8e;--red:#f56565;--tip-bg:#1a2236;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:2rem 1rem 3rem;}
+  .page{max-width:780px;margin:0 auto;}
+  header{text-align:center;margin-bottom:2.5rem;}
+  header h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,5vw,2.6rem);font-weight:700;letter-spacing:-0.02em;background:linear-gradient(135deg,#e8eaf0 0%,var(--accent2) 60%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  header p{margin-top:.5rem;color:var(--muted);font-size:.9rem;font-weight:300;}
+  .section{margin-bottom:1.25rem;}
+  .section-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;}
+  .section-header h2{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);white-space:nowrap;}
+  .section-header .line{flex:1;height:1px;background:var(--border);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+  @media(max-width:540px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.2rem;position:relative;}
+  .card.full{grid-column:1/-1;}
+  .card-label-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.55rem;}
+  .card-label-row label{font-size:.72rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);cursor:default;}
+  .info-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1;transition:background .15s,color .15s;font-style:normal;user-select:none;}
+  .info-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tooltip{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:100;background:var(--tip-bg);border:1px solid var(--accent);border-radius:8px;padding:.75rem .9rem;font-size:.78rem;color:var(--text);line-height:1.6;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+  .tooltip.visible{display:block;}
+  .tooltip strong{color:var(--accent2);}
+  .input-row{display:flex;align-items:center;gap:.4rem;}
+  .prefix{font-size:.95rem;color:var(--muted);min-width:1rem;}
+  input[type="number"],select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;padding:.5rem .7rem;outline:none;transition:border-color .2s;-moz-appearance:textfield;}
+  input[type="number"]:focus,select:focus{border-color:var(--accent);}
+  input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;}
+  select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem;background-color:var(--surface2);}
+  .seg-control{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .seg-control button{flex:1;padding:.55rem 1rem;background:transparent;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;transition:background .2s,color .2s;}
+  .seg-control button.active{background:var(--accent);color:#fff;font-weight:500;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+  .toggle-label-text{font-size:.85rem;color:var(--text);line-height:1.4;}
+  .toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
+  .toggle input{display:none;}
+  .toggle-track{position:absolute;inset:0;background:var(--border);border-radius:999px;cursor:pointer;transition:background .2s;}
+  .toggle input:checked+.toggle-track{background:var(--accent);}
+  .toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none;}
+  .toggle input:checked~.toggle-thumb{transform:translateX(18px);}
+  .range-row{display:flex;align-items:center;gap:.6rem;}
+  input[type="range"]{flex:1;background:transparent;border:none;padding:0;height:18px;cursor:pointer;accent-color:var(--accent);}
+  .range-val{font-size:.95rem;font-weight:500;color:var(--accent2);min-width:52px;text-align:right;}
+  .conditional{overflow:hidden;max-height:0;transition:max-height .3s ease,opacity .3s ease;opacity:0;}
+  .conditional.open{max-height:800px;opacity:1;}
+  .overwaarde-pill{display:inline-block;margin-top:.4rem;font-size:.75rem;padding:.2rem .6rem;border-radius:999px;background:rgba(62,207,142,.12);color:var(--green);border:1px solid rgba(62,207,142,.25);}
+
+/* Schulden tabel */
+.schulden-blok{background:var(–surface);border:1px solid var(–border);border-radius:10px;padding:1.1rem 1.2rem;position:relative;}
+.schuld-rij{display:grid;grid-template-columns:1fr 1fr;gap:.6rem .85rem;align-items:start;padding:.65rem 0;border-bottom:1px solid var(–border);}
+.schuld-rij:last-of-type{border-bottom:none;}
+@media(max-width:520px){.schuld-rij{grid-template-columns:1fr;}}
+.schuld-label-row{display:flex;align-items:center;gap:.35rem;grid-column:1/-1;margin-bottom:.1rem;}
+.schuld-naam{font-size:.8rem;font-weight:500;color:var(–text);}
+.schuld-inputs{display:flex;gap:.75rem;grid-column:1/-1;}
+.schuld-veld{flex:1;}
+.schuld-sub{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(–muted);display:block;margin-bottom:.3rem;}
+.schuld-result{background:var(–surface2);border:1px solid var(–border);border-radius:7px;padding:.5rem .7rem;font-size:.9rem;color:var(–accent2);font-weight:500;}
+.schuld-totaal-rij{display:flex;justify-content:space-between;align-items:center;margin-top:.85rem;padding:.75rem 1rem;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:8px;}
+.schuld-totaal-label{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(–muted);}
+.schuld-totaal-val{font-size:1rem;font-weight:600;color:var(–accent2);}
+.schuld-impact{font-size:.72rem;color:var(–red);margin-left:.5rem;}
+
+/* Results */
+.results-card{background:linear-gradient(135deg,#141c2e 0%,#192040 100%);border:1px solid rgba(79,142,247,.35);border-radius:12px;padding:1.8rem;margin-top:.5rem;margin-bottom:1rem;}
+.result-main{text-align:center;margin-bottom:1.4rem;}
+.result-main .sub{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(–muted);margin-bottom:.3rem;}
+.result-main .amount{font-family:‘Playfair Display’,serif;font-size:clamp(2rem,6vw,3rem);font-weight:700;color:var(–accent2);letter-spacing:-.02em;}
+.result-main .note{font-size:.78rem;color:var(–muted);margin-top:.25rem;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+@media(max-width:400px){.result-grid{grid-template-columns:1fr;}}
+.result-item{background:rgba(255,255,255,.04);border-radius:8px;padding:.75rem .9rem;}
+.r-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(–muted);margin-bottom:.2rem;}
+.r-value{font-size:.95rem;font-weight:500;color:var(–text);}
+.r-value.green{color:var(–green);}
+.r-value.gold{color:var(–gold);}
+.r-value.red{color:var(–red);}
+.disclaimer{background:var(–surface);border:1px solid var(–border);border-left:3px solid var(–gold);border-radius:8px;padding:.9rem 1.1rem;font-size:.78rem;color:var(–muted);line-height:1.65;}
+.disclaimer strong{color:var(–gold);}
+.disclaimer a{color:var(–accent2);text-decoration:none;}
+.disclaimer a:hover{text-decoration:underline;}
+</style>
+
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Maximale Hypotheek</h1>
+    <p>Indicatieve berekening — NIBUD-normen 2025 &amp; Tijdelijke regeling hypothecair krediet</p>
+  </header>
+
+  <!-- SITUATIE -->
+
+  <div class="section">
+    <div class="section-header"><h2>Jouw situatie</h2><div class="line"></div></div>
+    <div class="grid">
+      <div class="card full">
+        <div class="card-label-row">
+          <label>Aankoopsituatie</label>
+          <span class="info-btn" onclick="toggleTip('tip-situatie')">i</span>
+          <div class="tooltip" id="tip-situatie">
+            <strong>Starter</strong> — Je koopt voor het eerst een woning. Geen bestaande hypotheek of overwaarde.<br><br>
+            <strong>Doorstromer</strong> — Je hebt al een eigen woning. De geschatte overwaarde (verkoopprijs min resterende hypotheek) kun je inbrengen als eigen vermogen. Koop je de nieuwe woning vóórdat je de huidige hebt verkocht, dan tellen de bestaande maandlasten mee als schuld.
+          </div>
+        </div>
+        <div class="seg-control">
+          <button class="active" id="btn-starter" onclick="setSituatie('starter')">🏠 Starter</button>
+          <button id="btn-doorstromer" onclick="setSituatie('doorstromer')">🔄 Doorstromer</button>
+        </div>
+      </div>
+    </div>
+    <div class="conditional" id="block-doorstromer">
+      <div class="grid" style="margin-top:.85rem;">
+        <div class="card">
+          <div class="card-label-row">
+            <label>Verwachte verkoopprijs huidige woning</label>
+            <span class="info-btn" onclick="toggleTip('tip-verkoop')">i</span>
+            <div class="tooltip" id="tip-verkoop">
+              De prijs waarvoor je verwacht je huidige woning te verkopen. Gebruik een recente WOZ-waarde of taxatie als richtlijn. Verkoopkosten (makelaarscourtage ~1%, notaris ~€500–700) worden hier niet afgetrokken.
+            </div>
+          </div>
+          <div class="input-row"><span class="prefix">€</span><input type="number" id="verkoopprijs" value="300000" min="0" step="5000" oninput="bereken()"></div>
+        </div>
+        <div class="card">
+          <div class="card-label-row">
+            <label>Resterende hypotheek huidige woning</label>
+            <span class="info-btn" onclick="toggleTip('tip-resthyp')">i</span>
+            <div class="tooltip" id="tip-resthyp">
+              Het openstaande hypotheekbedrag. Na verkoop wordt dit direct afgelost. De netto-overwaarde (verkoopprijs minus restschuld) wordt opgeteld bij je eigen inbreng.
+            </div>
+          </div>
+          <div class="input-row"><span class="prefix">€</span><input type="number" id="resthypotheek" value="150000" min="0" step="5000" oninput="bereken()"></div>
+          <div id="overwaarde-pill" style="display:none" class="overwaarde-pill"></div>
+        </div>
+        <div class="card full">
+          <div class="card-label-row" style="margin-bottom:.5rem;">
+            <label>Dubbele woonlasten?</label>
+            <span class="info-btn" onclick="toggleTip('tip-dubbel')">i</span>
+            <div class="tooltip" id="tip-dubbel">
+              Alleen aanvinken als je de nieuwe woning koopt <strong>vóórdat je huidige woning is verkocht</strong>. De geldverstrekker telt je huidige hypotheeklast dan mee als schuld.
+            </div>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label-text">Ik koop de nieuwe woning vóórdat mijn huidige woning is verkocht</span>
+            <label class="toggle">
+              <input type="checkbox" id="dubbelwonen" onchange="toggleDubbel()">
+              <span class="toggle-track"></span><span class="toggle-thumb"></span>
+            </label>
+          </div>
+          <div class="conditional" id="block-huidigelast" style="margin-top:.75rem;">
+            <div class="card-label-row">
+              <label>Bruto maandlast huidige hypotheek</label>
+              <span class="info-btn" onclick="toggleTip('tip-huidigelast')">i</span>
+              <div class="tooltip" id="tip-huidigelast">
+                De totale bruto maandlast van je huidige hypotheek (rente + aflossing). Dit bedrag telt de bank mee als vaste last.
+              </div>
+            </div>
+            <div class="input-row"><span class="prefix">€</span><input type="number" id="huidigelast" value="800" min="0" step="50" oninput="bereken()"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INKOMEN -->
+
+  <div class="section">
+    <div class="section-header"><h2>Inkomen</h2><div class="line"></div></div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-label-row">
+          <label>Bruto jaarinkomen aanvrager 1</label>
+          <span class="info-btn" onclick="toggleTip('tip-ink1')">i</span>
+          <div class="tooltip" id="tip-ink1">
+            Bruto jaarinkomen inclusief vakantiegeld (8%). Bij een vast contract telt het volledige inkomen. Bij tijdelijk contract of zzp rekenen geldverstrekkers vaak met een gemiddelde van de afgelopen 2–3 jaar.
+          </div>
+        </div>
+        <div class="input-row"><span class="prefix">€</span><input type="number" id="inkomen1" value="55000" min="0" step="500" oninput="bereken()"></div>
+      </div>
+      <div class="card">
+        <div class="card-label-row">
+          <label>Bruto jaarinkomen aanvrager 2</label>
+          <span class="info-btn" onclick="toggleTip('tip-ink2')">i</span>
+          <div class="tooltip" id="tip-ink2">
+            Inkomen van een eventuele partner of medeaanvrager. Schakel hieronder aan om dit mee te tellen. Beiden zijn dan hoofdelijk aansprakelijk voor de volledige hypotheekschuld.
+          </div>
+        </div>
+        <div class="input-row"><span class="prefix">€</span><input type="number" id="inkomen2" value="0" min="0" step="500" oninput="bereken()"></div>
+      </div>
+      <div class="card full">
+        <div class="toggle-row">
+          <span class="toggle-label-text">Inkomen aanvrager 2 meetellen als medeaanvrager</span>
+          <label class="toggle">
+            <input type="checkbox" id="partner" onchange="bereken()">
+            <span class="toggle-track"></span><span class="toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+      <div class="card full">
+        <div class="card-label-row">
+          <label>Energielabel woning</label>
+          <span class="info-btn" onclick="toggleTip('tip-energie')">i</span>
+          <div class="tooltip" id="tip-energie">
+            Voor woningen met label <strong>A, A+, A++ of A+++</strong> geldt een verhoogde financieringslastnorm (~+1% van toetsinkomen). Vastgelegd in de Tijdelijke regeling hypothecair krediet 2025.
+          </div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label-text">Woning heeft energielabel A of hoger (verhoogde leennorm van toepassing)</span>
+          <label class="toggle">
+            <input type="checkbox" id="energielabel" onchange="bereken()">
+            <span class="toggle-track"></span><span class="toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LENING & RENTE -->
+
+  <div class="section">
+    <div class="section-header"><h2>Lening &amp; rente</h2><div class="line"></div></div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-label-row">
+          <label>Rentevaste periode</label>
+          <span class="info-btn" onclick="toggleTip('tip-periode')">i</span>
+          <div class="tooltip" id="tip-periode">
+            Bij een periode <strong>korter dan 10 jaar</strong> toetst de bank op minimaal 5% rente (wettelijke toetsvloer), ook als de werkelijke rente lager is. Vanaf 10 jaar wordt getoetst op de werkelijke contractrente.
+          </div>
+        </div>
+        <select id="periode" onchange="bereken()">
+          <option value="1">1 jaar</option>
+          <option value="5">5 jaar</option>
+          <option value="10" selected>10 jaar</option>
+          <option value="20">20 jaar</option>
+          <option value="30">30 jaar</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-label-row">
+          <label>Hypotheekrente (indicatief)</label>
+          <span class="info-btn" onclick="toggleTip('tip-rente')">i</span>
+          <div class="tooltip" id="tip-rente">
+            De werkelijke rente hangt af van de rentevaste periode, LTV-klasse en geldverstrekker. Vergelijk actuele tarieven via <strong>Independer</strong> of <strong>Hypotheker.nl</strong>.
+          </div>
+        </div>
+        <div class="range-row">
+          <input type="range" id="rente" min="2" max="8" step="0.05" value="4.0" oninput="updateRente(this.value)">
+          <span class="range-val" id="renteVal">4,00%</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label-row">
+          <label>Looptijd hypotheek</label>
+          <span class="info-btn" onclick="toggleTip('tip-looptijd')">i</span>
+          <div class="tooltip" id="tip-looptijd">
+            Standaard is 30 jaar (laagste maandlasten). Geldverstrekkers willen de hypotheek doorgaans afgelost zien vóór je <strong>AOW-leeftijd (67)</strong> of uiterlijk bij 80 jaar. Bij 52 jaar betekent dat realistisch gezien 15–28 jaar.
+          </div>
+        </div>
+        <select id="looptijd" onchange="bereken()">
+          <option value="10">10 jaar</option>
+          <option value="15">15 jaar</option>
+          <option value="20">20 jaar</option>
+          <option value="25">25 jaar</option>
+          <option value="30" selected>30 jaar</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-label-row">
+          <label>Type hypotheek</label>
+          <span class="info-btn" onclick="toggleTip('tip-type')">i</span>
+          <div class="tooltip" id="tip-type">
+            <strong>Annuïtair</strong> — Vaste maandlast; aan het begin meer rente, later meer aflossing. Verplicht voor hypotheekrenteaftrek.<br><br>
+            <strong>Lineair</strong> — Vaste aflossing per maand; maandlast daalt elke maand. Totaal minder rente, maar beginjaren duurder.
+          </div>
+        </div>
+        <select id="type" onchange="bereken()">
+          <option value="annuitair" selected>Annuïtair</option>
+          <option value="lineair">Lineair</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- WONING -->
+
+  <div class="section">
+    <div class="section-header"><h2>Woning &amp; eigen inbreng</h2><div class="line"></div></div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-label-row">
+          <label>Marktwaarde / koopsom woning</label>
+          <span class="info-btn" onclick="toggleTip('tip-woning')">i</span>
+          <div class="tooltip" id="tip-woning">
+            De koopsom of getaxeerde marktwaarde. Maximale hypotheek is <strong>100% van de marktwaarde</strong> (LTV-grens). Kosten koper (~5–6%) betaal je uit eigen middelen.
+          </div>
+        </div>
+        <div class="input-row"><span class="prefix">€</span><input type="number" id="woningwaarde" value="350000" min="0" step="5000" oninput="bereken()"></div>
+      </div>
+      <div class="card">
+        <div class="card-label-row">
+          <label>Extra eigen inbreng (spaargeld / schenking)</label>
+          <span class="info-btn" onclick="toggleTip('tip-eigeninbreng')">i</span>
+          <div class="tooltip" id="tip-eigeninbreng">
+            Eigen spaargeld of schenkingen bovenop eventuele overwaarde. Verlaagt het benodigde hypotheekbedrag. Hou minimaal de kosten koper (~5–6% van koopsom) achter de hand — die mag je niet meefinancieren.
+          </div>
+        </div>
+        <div class="input-row"><span class="prefix">€</span><input type="number" id="eigeninbreng" value="0" min="0" step="1000" oninput="bereken()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHULDEN -->
+
+  <div class="section">
+    <div class="section-header"><h2>Schulden &amp; verplichtingen</h2><div class="line"></div></div>
+    <div class="schulden-blok">
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Alle schulden <em>anders dan een hypotheek</em> tellen mee als vaste last. De bank rekent per type schuld een eigen toetslast — soms hoger dan de werkelijke termijn. Vul in wat van toepassing is.</p>
+
+```
+  <!-- Roodstand -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Roodstand / rekening-courant</span>
+      <span class="info-btn" onclick="toggleTip('tip-rood')">i</span>
+      <div class="tooltip" id="tip-rood">
+        De bank rekent met <strong>2% van de kredietlimiet per maand</strong>, ongeacht of je daadwerkelijk rood staat. Vul de <em>limiet</em> in, niet het bedrag dat je rood staat. Meerdere rekeningen? Limieten optellen.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Kredietlimiet</span><div class="input-row"><span class="prefix">€</span><input type="number" id="rood-limiet" value="0" min="0" step="100" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="rood-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Creditcard -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Creditcard</span>
+      <span class="info-btn" onclick="toggleTip('tip-cc')">i</span>
+      <div class="tooltip" id="tip-cc">
+        Ook hier rekent de bank met <strong>2% van de kaartlimiet per maand</strong> — niet je werkelijke uitgaven of uitstaand saldo. Meerdere kaarten? Limieten optellen.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Kaartlimiet</span><div class="input-row"><span class="prefix">€</span><input type="number" id="cc-limiet" value="0" min="0" step="100" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="cc-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Doorlopend krediet -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Doorlopend krediet (DK)</span>
+      <span class="info-btn" onclick="toggleTip('tip-dk')">i</span>
+      <div class="tooltip" id="tip-dk">
+        Bij een doorlopend krediet rekent de bank met <strong>2% van de kredietlimiet per maand</strong> (de limiet, niet het uitstaande saldo). Zelfde principe als roodstand en creditcard.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Kredietlimiet</span><div class="input-row"><span class="prefix">€</span><input type="number" id="dk-limiet" value="0" min="0" step="100" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="dk-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Persoonlijke lening -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Persoonlijke lening (PL)</span>
+      <span class="info-btn" onclick="toggleTip('tip-pl')">i</span>
+      <div class="tooltip" id="tip-pl">
+        De bank rekent met de <strong>werkelijke maandtermijn</strong> die je betaalt. Vul die in. Je vindt dit op je bankafschrift of leningovereenkomst.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Maandtermijn</span><div class="input-row"><span class="prefix">€</span><input type="number" id="pl-mnd" value="0" min="0" step="10" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="pl-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Studieschuld -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Studieschuld (DUO)</span>
+      <span class="info-btn" onclick="toggleTip('tip-studie')">i</span>
+      <div class="tooltip" id="tip-studie">
+        DUO-studieschulden tellen mee voor <strong>0,45% van de oorspronkelijke schuld per maand</strong> — niet de restschuld. Vul de <em>oorspronkelijke</em> studieschuld in zoals op je DUO-overzicht.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Oorspronkelijke schuld</span><div class="input-row"><span class="prefix">€</span><input type="number" id="studie-schuld" value="0" min="0" step="500" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="studie-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Private lease -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Private lease auto</span>
+      <span class="info-btn" onclick="toggleTip('tip-lease')">i</span>
+      <div class="tooltip" id="tip-lease">
+        De volledige <strong>maandelijkse leasetermijn</strong> telt mee als vaste last. Zakelijke lease (op naam werkgever/BV) telt doorgaans niet mee. Financial lease telt als persoonlijke lening.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Maandtermijn</span><div class="input-row"><span class="prefix">€</span><input type="number" id="lease-mnd" value="0" min="0" step="10" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="lease-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Alimentatie -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Partneralimentatie (te betalen)</span>
+      <span class="info-btn" onclick="toggleTip('tip-alim')">i</span>
+      <div class="tooltip" id="tip-alim">
+        Alimentatie die jij <em>betaalt</em> aan een ex-partner telt volledig mee als vaste last. Alimentatie die jij <em>ontvangt</em> kan als inkomen worden opgevoerd — vraag dit na bij je adviseur.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Per maand</span><div class="input-row"><span class="prefix">€</span><input type="number" id="alim-mnd" value="0" min="0" step="10" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="alim-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Klarna / AfterPay -->
+  <div class="schuld-rij">
+    <div class="schuld-label-row">
+      <span class="schuld-naam">Achteraf betalen (Klarna / AfterPay)</span>
+      <span class="info-btn" onclick="toggleTip('tip-klarna')">i</span>
+      <div class="tooltip" id="tip-klarna">
+        Actieve achteraf-betaalregelingen worden steeds vaker geregistreerd bij BKR en meegenomen door geldverstrekkers. Vul de huidige openstaande maandtermijn in. Zijn ze al afbetaald, vul dan 0 in.
+      </div>
+    </div>
+    <div class="schuld-inputs">
+      <div class="schuld-veld"><span class="schuld-sub">Maandtermijn</span><div class="input-row"><span class="prefix">€</span><input type="number" id="klarna-mnd" value="0" min="0" step="5" oninput="bereken()"></div></div>
+      <div class="schuld-veld"><span class="schuld-sub">Toetslast / mnd</span><div class="schuld-result" id="klarna-last">€ 0</div></div>
+    </div>
+  </div>
+
+  <!-- Totaal -->
+  <div class="schuld-totaal-rij">
+    <span class="schuld-totaal-label">Totale maandlast schulden</span>
+    <span>
+      <span class="schuld-totaal-val" id="schulden-totaal">€ 0 / mnd</span>
+      <span class="schuld-impact" id="schulden-impact"></span>
+    </span>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- RESULTATEN -->
+
+  <div class="results-card">
+    <div class="result-main">
+      <div class="sub">Maximale hypotheek (indicatie)</div>
+      <div class="amount" id="maxHypotheek">€ —</div>
+      <div class="note" id="beperkingNote"></div>
+    </div>
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="r-label">Max. op inkomen (LTI)</div>
+        <div class="r-value" id="ltiResult">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Max. op woningwaarde (LTV 100%)</div>
+        <div class="r-value" id="ltvResult">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Toetsinkomen totaal</div>
+        <div class="r-value gold" id="toetsinkomen">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Toetsrente (voor berekening)</div>
+        <div class="r-value" id="toetsrenteVal">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Bruto maandlast (indicatief)</div>
+        <div class="r-value green" id="maandlast">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Totale eigen inbreng</div>
+        <div class="r-value green" id="eigenTotaal">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Financieringslastnorm (LTI %)</div>
+        <div class="r-value" id="flnNorm">—</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">Kosten koper (~5,5%) — dekking</div>
+        <div class="r-value" id="kkNote">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> Indicatieve berekening op basis van publiek beschikbare NIBUD-normentabellen 2025 en de Tijdelijke regeling hypothecair krediet (Staatsblad). De werkelijke maximale hypotheek wordt vastgesteld door een erkende geldverstrekker op basis van een volledig financieel dossier. Raadpleeg altijd een <a href="https://www.afm.nl/nl-nl/professionals/registers/vergunningenregisters/wft-register" target="_blank">AFM-vergund hypotheekadviseur</a>.
+  </div>
+</div>
+
+<script>
+// LTI-tabel op basis van NIBUD-normen 2025 / Tijdelijke regeling hypothecair krediet
+// Bron (publiek domein): Staatsblad van het Koninkrijk der Nederlanden
+// Eigen clean-room implementatie — geen code-kopie van externe bronnen.
+const LTI_TABEL = [
+  { max: 20000,    pct: 0.210 },
+  { max: 25000,    pct: 0.220 },
+  { max: 30000,    pct: 0.230 },
+  { max: 35000,    pct: 0.250 },
+  { max: 40000,    pct: 0.270 },
+  { max: 45000,    pct: 0.285 },
+  { max: 50000,    pct: 0.300 },
+  { max: 55000,    pct: 0.310 },
+  { max: 60000,    pct: 0.315 },
+  { max: 70000,    pct: 0.320 },
+  { max: 80000,    pct: 0.325 },
+  { max: 100000,   pct: 0.328 },
+  { max: Infinity, pct: 0.330 },
+];
+const ENERGIE_OPSLAG = 0.01;
+const TOETS_VLOER    = 0.05;
+const LTV_MAX        = 1.00;
+const KK_PCT         = 0.055;
+
+let situatie = 'starter';
+
+function setSituatie(s) {
+  situatie = s;
+  document.getElementById('btn-starter').classList.toggle('active', s === 'starter');
+  document.getElementById('btn-doorstromer').classList.toggle('active', s === 'doorstromer');
+  document.getElementById('block-doorstromer').classList.toggle('open', s === 'doorstromer');
+  bereken();
+}
+
+function toggleDubbel() {
+  const aan = document.getElementById('dubbelwonen').checked;
+  document.getElementById('block-huidigelast').classList.toggle('open', aan);
+  bereken();
+}
+
+function getLTINorm(ink) {
+  for (const r of LTI_TABEL) { if (ink <= r.max) return r.pct; }
+  return 0.330;
+}
+
+function getToetsrente(rente, periode) {
+  return periode < 10 ? Math.max(rente, TOETS_VLOER) : rente;
+}
+
+function annuitairFactor(mr, n) {
+  if (mr === 0) return 1 / n;
+  return mr / (1 - Math.pow(1 + mr, -n));
+}
+
+function maxLeningVanJaarlast(jaarlast, rente, looptijd) {
+  const af = annuitairFactor(rente / 12, looptijd * 12);
+  return (jaarlast / 12) / af;
+}
+
+function fmt(n) { return 'EUR ' + Math.round(n).toLocaleString('nl-NL'); }
+function fmtE(n) { return '\u20AC ' + Math.round(n).toLocaleString('nl-NL'); }
+
+function updateRente(v) {
+  document.getElementById('renteVal').textContent = parseFloat(v).toFixed(2).replace('.', ',') + '%';
+  bereken();
+}
+
+function toggleTip(id) {
+  document.querySelectorAll('.tooltip').forEach(t => { if (t.id !== id) t.classList.remove('visible'); });
+  document.getElementById(id).classList.toggle('visible');
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.classList.contains('info-btn'))
+    document.querySelectorAll('.tooltip').forEach(t => t.classList.remove('visible'));
+});
+
+// Berekening toetslasten per schuldtype
+function berekenSchulden() {
+  const roodLimiet  = parseFloat(document.getElementById('rood-limiet').value) || 0;
+  const ccLimiet    = parseFloat(document.getElementById('cc-limiet').value) || 0;
+  const dkLimiet    = parseFloat(document.getElementById('dk-limiet').value) || 0;
+  const plMnd       = parseFloat(document.getElementById('pl-mnd').value) || 0;
+  const studieSchuld= parseFloat(document.getElementById('studie-schuld').value) || 0;
+  const leaseMnd    = parseFloat(document.getElementById('lease-mnd').value) || 0;
+  const alimentatie = parseFloat(document.getElementById('alim-mnd').value) || 0;
+  const klarnaMnd   = parseFloat(document.getElementById('klarna-mnd').value) || 0;
+
+  // Toetslasten per type
+  const roodLast   = roodLimiet * 0.02;   // 2% van limiet
+  const ccLast     = ccLimiet * 0.02;     // 2% van limiet
+  const dkLast     = dkLimiet * 0.02;     // 2% van limiet
+  const plLast     = plMnd;               // werkelijke termijn
+  const studieLast = studieSchuld * 0.0045; // 0,45% van oorspronkelijke schuld
+  const leaseLast  = leaseMnd;            // volledige termijn
+  const alimentLast= alimentatie;         // volledig
+  const klarnaLast = klarnaMnd;           // volledig
+
+  // Toon per rij
+  document.getElementById('rood-last').textContent   = fmtE(roodLast);
+  document.getElementById('cc-last').textContent     = fmtE(ccLast);
+  document.getElementById('dk-last').textContent     = fmtE(dkLast);
+  document.getElementById('pl-last').textContent     = fmtE(plLast);
+  document.getElementById('studie-last').textContent = fmtE(studieLast);
+  document.getElementById('lease-last').textContent  = fmtE(leaseLast);
+  document.getElementById('alim-last').textContent   = fmtE(alimentLast);
+  document.getElementById('klarna-last').textContent = fmtE(klarnaLast);
+
+  const totaal = roodLast + ccLast + dkLast + plLast + studieLast + leaseLast + alimentLast + klarnaLast;
+  return totaal;
+}
+
+function bereken() {
+  const ink1        = parseFloat(document.getElementById('inkomen1').value) || 0;
+  const ink2        = parseFloat(document.getElementById('inkomen2').value) || 0;
+  const partner     = document.getElementById('partner').checked;
+  const rente       = parseFloat(document.getElementById('rente').value) / 100;
+  const periode     = parseInt(document.getElementById('periode').value);
+  const looptijd    = parseInt(document.getElementById('looptijd').value);
+  const woning      = parseFloat(document.getElementById('woningwaarde').value) || 0;
+  const inbreng     = parseFloat(document.getElementById('eigeninbreng').value) || 0;
+  const energie     = document.getElementById('energielabel').checked;
+  const verkoop     = parseFloat(document.getElementById('verkoopprijs').value) || 0;
+  const resthyp     = parseFloat(document.getElementById('resthypotheek').value) || 0;
+  const dubbel      = document.getElementById('dubbelwonen').checked;
+  const huidigelast = parseFloat(document.getElementById('huidigelast').value) || 0;
+
+  // Schulden
+  const schuldenMaand = berekenSchulden();
+  const totSchuldenMaand = schuldenMaand + (situatie === 'doorstromer' && dubbel ? huidigelast : 0);
+
+  document.getElementById('schulden-totaal').textContent = fmtE(totSchuldenMaand) + ' / mnd';
+
+  // Overwaarde
+  const overwaarde = situatie === 'doorstromer' ? Math.max(verkoop - resthyp, 0) : 0;
+  const pill = document.getElementById('overwaarde-pill');
+  if (situatie === 'doorstromer') {
+    pill.style.display = 'inline-block';
+    const ow = verkoop - resthyp;
+    pill.textContent = ow >= 0 ? 'Overwaarde: ' + fmtE(ow) : 'Restschuld: ' + fmtE(Math.abs(ow));
+  } else {
+    pill.style.display = 'none';
+  }
+
+  const eigenTotaal  = inbreng + overwaarde;
+  const toetsinkomen = partner ? ink1 + ink2 : ink1;
+
+  let ltiNorm = getLTINorm(toetsinkomen);
+  if (energie) ltiNorm = Math.min(ltiNorm + ENERGIE_OPSLAG, 0.350);
+
+  const maxJaarlast  = toetsinkomen * ltiNorm;
+  const beschikbaar  = Math.max(maxJaarlast - totSchuldenMaand * 12, 0);
+
+  const toetsrente      = getToetsrente(rente, periode);
+  const maxLTI          = maxLeningVanJaarlast(beschikbaar, toetsrente, looptijd);
+  const maxLTV          = woning > 0 ? woning * LTV_MAX : Infinity;
+  const benodigdeLening = woning > 0 ? Math.max(woning - eigenTotaal, 0) : Infinity;
+
+  // Impact schulden op hypotheek (verschil met/zonder schulden)
+  const maxLTI_zonderSchuld = maxLeningVanJaarlast(maxJaarlast, toetsrente, looptijd);
+  const schuldImpact = Math.round(maxLTI_zonderSchuld - maxLTI);
+  const impactEl = document.getElementById('schulden-impact');
+  if (totSchuldenMaand > 0) {
+    impactEl.textContent = '▼ ' + fmtE(schuldImpact) + ' minder hypotheek';
+  } else {
+    impactEl.textContent = '';
+  }
+
+  // Definitief maximum
+  let maxHypotheek, beperkingNote;
+  if (woning > 0 && eigenTotaal >= woning) {
+    maxHypotheek = 0;
+    beperkingNote = 'Eigen inbreng dekt de volledige koopsom — geen hypotheek nodig';
+  } else if (woning > 0 && benodigdeLening <= Math.min(maxLTI, maxLTV)) {
+    maxHypotheek = benodigdeLening;
+    beperkingNote = 'Benodigde lening: woningwaarde minus eigen inbreng (inkomen laat meer toe)';
+  } else if (maxLTI <= (woning > 0 ? maxLTV : Infinity)) {
+    maxHypotheek = woning > 0 ? Math.min(maxLTI, benodigdeLening) : maxLTI;
+    beperkingNote = 'Beperkt door: toetsinkomen (LTI-norm)';
+  } else {
+    maxHypotheek = woning > 0 ? Math.min(maxLTV, benodigdeLening) : maxLTI;
+    beperkingNote = 'Beperkt door: woningwaarde (LTV 100%)';
+  }
+
+  const maandlast = maxHypotheek * annuitairFactor(rente / 12, looptijd * 12);
+  const kkBedrag  = woning > 0 ? woning * KK_PCT : 0;
+  const kkGedekt  = eigenTotaal >= kkBedrag;
+
+  document.getElementById('maxHypotheek').textContent = fmtE(maxHypotheek);
+  document.getElementById('beperkingNote').textContent = beperkingNote;
+  document.getElementById('ltiResult').textContent = fmtE(maxLTI);
+  document.getElementById('ltvResult').textContent = woning > 0 ? fmtE(maxLTV) : '—';
+  document.getElementById('toetsinkomen').textContent = fmtE(toetsinkomen) + ' / jaar';
+  document.getElementById('toetsrenteVal').textContent =
+    (toetsrente * 100).toFixed(2).replace('.', ',') + '%' + (toetsrente > rente ? ' ⚠ toetsvloer' : '');
+  document.getElementById('maandlast').textContent = fmtE(maandlast) + ' / mnd';
+  document.getElementById('eigenTotaal').textContent = fmtE(eigenTotaal);
+  document.getElementById('flnNorm').textContent = (ltiNorm * 100).toFixed(1).replace('.', ',') + '%';
+
+  const kkEl = document.getElementById('kkNote');
+  if (woning > 0) {
+    kkEl.textContent = fmtE(kkBedrag) + (kkGedekt ? ' ✓ gedekt' : ' — tekort: ' + fmtE(kkBedrag - eigenTotaal));
+    kkEl.className = 'r-value ' + (kkGedekt ? 'green' : 'red');
+  } else {
+    kkEl.textContent = '—'; kkEl.className = 'r-value';
+  }
+}
+
+bereken();
+</script>
+
+</body>
+</html>
