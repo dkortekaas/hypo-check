@@ -18,6 +18,10 @@
   header{text-align:center;margin-bottom:2.5rem;}
   header h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,5vw,2.6rem);font-weight:700;letter-spacing:-0.02em;background:linear-gradient(135deg,#e8eaf0 0%,var(--accent2) 60%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
   header p{margin-top:.5rem;color:var(--muted);font-size:.9rem;font-weight:300;}
+  .reset-btn{display:inline-flex;align-items:center;gap:.4rem;margin-top:.85rem;padding:.4rem .9rem;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.75rem;cursor:pointer;transition:border-color .2s,color .2s;}
+  .reset-btn:hover{border-color:var(--red);color:var(--red);}
+  .save-indicator{font-size:.68rem;color:var(--green);margin-top:.4rem;opacity:0;transition:opacity .4s;}
+  .save-indicator.show{opacity:1;}
   .section{margin-bottom:1.25rem;}
   .section-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;}
   .section-header h2{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);white-space:nowrap;}
@@ -99,6 +103,10 @@
   <header>
     <h1>Maximale Hypotheek</h1>
     <p>Indicatieve berekening — NIBUD-normen 2025 &amp; Tijdelijke regeling hypothecair krediet</p>
+    <div style="margin-top:.6rem;">
+      <button class="reset-btn" onclick="resetAlles()">↺ Alles wissen</button>
+    </div>
+    <div class="save-indicator" id="save-indicator">✓ Opgeslagen</div>
   </header>
 
   <!-- SITUATIE -->
@@ -720,6 +728,67 @@ function bereken() {
   }
 }
 
+// ─── LocalStorage: sla alle veldwaarden op ───────────────────────────────────
+const VELD_IDS = [
+  'inkomen1','inkomen2','rente','periode','looptijd','type',
+  'woningwaarde','eigeninbreng',
+  'verkoopprijs','resthypotheek','huidigelast',
+  'rood-limiet','cc-limiet','dk-limiet','pl-mnd',
+  'studie-schuld','lease-mnd','alim-mnd','klarna-mnd'
+];
+const TOGGLE_IDS = ['partner','energielabel','dubbelwonen'];
+const STORAGE_KEY = 'hypotheek-berekener-v1';
+
+function slaOp() {
+  const data = { situatie };
+  VELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) data[id] = el.value;
+  });
+  TOGGLE_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) data[id] = el.checked;
+  });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  // Toon korte "Opgeslagen" indicator
+  const ind = document.getElementById('save-indicator');
+  if (ind) {
+    ind.classList.add('show');
+    clearTimeout(ind._t);
+    ind._t = setTimeout(() => ind.classList.remove('show'), 1500);
+  }
+}
+
+function laadOp() {
+  let data;
+  try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) {}
+  if (!data) return;
+  if (data.situatie) setSituatie(data.situatie);
+  VELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && data[id] !== undefined) el.value = data[id];
+  });
+  TOGGLE_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && data[id] !== undefined) el.checked = data[id];
+  });
+  if (data['dubbelwonen']) {
+    document.getElementById('block-huidigelast').classList.add('open');
+  }
+  updateRente(document.getElementById('rente').value);
+}
+
+function resetAlles() {
+  if (!confirm('Alle ingevulde waarden wissen en terugzetten naar standaard?')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  location.reload();
+}
+
+// Wrap bereken() zodat elke berekening ook opslaat
+const _berekenOrig = bereken;
+bereken = function() { _berekenOrig(); slaOp(); };
+
+laadOp();
 bereken();
 </script>
 
