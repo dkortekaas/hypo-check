@@ -70,6 +70,16 @@ Bij een rentevaste periode **korter dan 10 jaar** geldt een wettelijke toetsvloe
 |Marktwaarde / koopsom|Basis voor LTV-berekening                          |
 |Extra eigen inbreng  |Spaargeld of schenking bovenop eventuele overwaarde|
 
+### Overwaarde verdelen (alleen doorstromer)
+
+|Veld                     |Toelichting                                                                                                              |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------|
+|Overwaarde inleggen      |Het deel van de overwaarde dat je in de nieuwe hypotheek steekt (verlaagt benodigde lening)                              |
+|Verbouwingsreserve       |Het resterende deel van de overwaarde dat je apart houdt voor verbouwing of als buffer                                   |
+|Verbouwing meefinancieren|Verbouwkosten kunnen in de hypotheek worden meegefinancierd tot 100% van de marktwaarde *na* verbouwing (taxatie vereist)|
+|Verbouwkosten totaal     |De totale verwachte verbouwingskosten                                                                                    |
+|Meerwaarde na verbouwing |De verwachte stijging van de woningwaarde door de verbouwing — dit verhoogt de LTV-grens                                 |
+
 ### Schulden & verplichtingen
 
 Elke schuld heeft zijn eigen toetsingsmethodiek:
