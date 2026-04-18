@@ -139,7 +139,7 @@
               De prijs waarvoor je verwacht je huidige woning te verkopen. Gebruik een recente WOZ-waarde of taxatie als richtlijn. Verkoopkosten (makelaarscourtage ~1%, notaris ~€500–700) worden hier niet afgetrokken.
             </div>
           </div>
-          <div class="input-row"><span class="prefix">€</span><input type="number" id="verkoopprijs" value="300000" min="0" step="5000" oninput="bereken()"></div>
+          <div class="input-row"><span class="prefix">€</span><input type="number" id="verkoopprijs" value="300000" min="0" step="5000" oninput="updateOwSplitBlok()"></div>
         </div>
         <div class="card">
           <div class="card-label-row">
@@ -149,7 +149,7 @@
               Het openstaande hypotheekbedrag. Na verkoop wordt dit direct afgelost. De netto-overwaarde (verkoopprijs minus restschuld) wordt opgeteld bij je eigen inbreng.
             </div>
           </div>
-          <div class="input-row"><span class="prefix">€</span><input type="number" id="resthypotheek" value="150000" min="0" step="5000" oninput="bereken()"></div>
+          <div class="input-row"><span class="prefix">€</span><input type="number" id="resthypotheek" value="150000" min="0" step="5000" oninput="updateOwSplitBlok()"></div>
           <div id="overwaarde-pill" style="display:none" class="overwaarde-pill"></div>
         </div>
         <div class="card full">
@@ -327,7 +327,75 @@
         </div>
         <div class="input-row"><span class="prefix">€</span><input type="number" id="eigeninbreng" value="0" min="0" step="1000" oninput="bereken()"></div>
       </div>
+
+```
+  <!-- Overwaarde splitsing — alleen zichtbaar als doorstromer -->
+  <div class="card full conditional" id="block-overwaarde-split">
+    <div class="card-label-row" style="margin-bottom:.7rem;">
+      <label>Overwaarde verdelen</label>
+      <span class="info-btn" onclick="toggleTip('tip-owsplit')">i</span>
+      <div class="tooltip" id="tip-owsplit">
+        Je hoeft de overwaarde niet volledig in de nieuwe hypotheek te steken. Je kunt een deel reserveren voor een verbouwing of als buffer. Vul in hoeveel je wilt inleggen — de rest wordt automatisch als verbouwingsreserve getoond.<br><br>
+        <strong>Verbouwing meefinancieren:</strong> Je kunt verbouwingskosten ook in de hypotheek meefinancieren, tot 100% van de <em>marktwaarde na verbouwing</em>. Schakel die optie aan en vul de verwachte meerwaarde in die de verbouwing oplevert.
+      </div>
     </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem;">
+      <div>
+        <span class="schuld-sub">Overwaarde inleggen in hypotheek</span>
+        <div class="input-row" style="margin-top:.3rem;"><span class="prefix">€</span>
+          <input type="number" id="ow-inleg" value="0" min="0" step="1000" oninput="berekenOwSplit()">
+        </div>
+      </div>
+      <div>
+        <span class="schuld-sub">Reserveren voor verbouwing / buffer</span>
+        <div class="schuld-result" id="ow-verbouw" style="margin-top:.3rem;">€ 0</div>
+      </div>
+    </div>
+
+    <!-- Waarschuwing bij overschrijding -->
+    <div id="ow-warning" style="display:none;font-size:.75rem;color:var(--red);margin-bottom:.75rem;padding:.5rem .7rem;background:rgba(245,101,101,.08);border:1px solid rgba(245,101,101,.25);border-radius:6px;">
+      ⚠ Inleg overschrijdt de beschikbare overwaarde
+    </div>
+
+    <!-- Verbouwing meefinancieren -->
+    <div style="border-top:1px solid var(--border);padding-top:.75rem;">
+      <div class="toggle-row" style="margin-bottom:.6rem;">
+        <span class="toggle-label-text">Verbouwing (deels) meefinancieren in de hypotheek</span>
+        <label class="toggle">
+          <input type="checkbox" id="verbouw-financieren" onchange="toggleVerbouwFinancieren()">
+          <span class="toggle-track"></span><span class="toggle-thumb"></span>
+        </label>
+      </div>
+      <div class="conditional" id="block-verbouw-fin">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
+          <div>
+            <span class="schuld-sub">Verbouwingskosten totaal</span>
+            <div class="input-row" style="margin-top:.3rem;"><span class="prefix">€</span>
+              <input type="number" id="verbouw-kosten" value="0" min="0" step="1000" oninput="bereken()">
+            </div>
+          </div>
+          <div>
+            <span class="schuld-sub">Verwachte meerwaarde woning na verbouwing</span>
+            <div class="input-row" style="margin-top:.3rem;"><span class="prefix">€</span>
+              <input type="number" id="verbouw-meerwaarde" value="0" min="0" step="1000" oninput="bereken()">
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:.65rem;font-size:.75rem;color:var(--muted);line-height:1.5;">
+          <span class="info-btn" style="margin-right:.35rem;" onclick="toggleTip('tip-verbouwfin')">i</span>
+          <div class="tooltip" id="tip-verbouwfin" style="top:auto;bottom:calc(100% + 6px);">
+            De bank financiert verbouwingen tot 100% van de <em>marktwaarde na verbouwing</em> (taxatie vereist). Vul de verwachte meerwaarde in die de verbouwing oplevert — niet alle verbouwingskosten leiden tot evenveel meerwaarde. De extra leenruimte = meerwaarde × 100% minus de al benodigde hypotheek.
+          </div>
+          Verhoogde LTV-grens: <strong id="ltv-na-verbouw">—</strong> &nbsp;|&nbsp; Extra leenruimte door verbouwing: <strong id="verbouw-extra" style="color:var(--green);">—</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+```
+
   </div>
 
   <!-- SCHULDEN -->
@@ -551,7 +619,7 @@ function setSituatie(s) {
   document.getElementById('btn-starter').classList.toggle('active', s === 'starter');
   document.getElementById('btn-doorstromer').classList.toggle('active', s === 'doorstromer');
   document.getElementById('block-doorstromer').classList.toggle('open', s === 'doorstromer');
-  bereken();
+  updateOwSplitBlok();
 }
 
 function toggleDubbel() {
@@ -654,17 +722,22 @@ function bereken() {
   document.getElementById('schulden-totaal').textContent = fmtE(totSchuldenMaand) + ' / mnd';
 
   // Overwaarde
-  const overwaarde = situatie === 'doorstromer' ? Math.max(verkoop - resthyp, 0) : 0;
+  const overwaardeRauw = situatie === 'doorstromer' ? verkoop - resthyp : 0;
+  const overwaardePos  = Math.max(overwaardeRauw, 0);
   const pill = document.getElementById('overwaarde-pill');
   if (situatie === 'doorstromer') {
     pill.style.display = 'inline-block';
-    const ow = verkoop - resthyp;
-    pill.textContent = ow >= 0 ? 'Overwaarde: ' + fmtE(ow) : 'Restschuld: ' + fmtE(Math.abs(ow));
+    pill.textContent = overwaardeRauw >= 0 ? 'Overwaarde: ' + fmtE(overwaardeRauw) : 'Restschuld: ' + fmtE(Math.abs(overwaardeRauw));
   } else {
     pill.style.display = 'none';
   }
 
-  const eigenTotaal  = inbreng + overwaarde;
+  // Overwaarde splitsing: inleg (in hypotheek) vs. verbouwreserve (apart houden)
+  const owInleg = situatie === 'doorstromer'
+    ? Math.min(parseFloat(document.getElementById('ow-inleg').value) || 0, overwaardePos)
+    : 0;
+
+  const eigenTotaal  = inbreng + owInleg;
   const toetsinkomen = partner ? ink1 + ink2 : ink1;
 
   let ltiNorm = getLTINorm(toetsinkomen);
@@ -675,8 +748,26 @@ function bereken() {
 
   const toetsrente      = getToetsrente(rente, periode);
   const maxLTI          = maxLeningVanJaarlast(beschikbaar, toetsrente, looptijd);
-  const maxLTV          = woning > 0 ? woning * LTV_MAX : Infinity;
-  const benodigdeLening = woning > 0 ? Math.max(woning - eigenTotaal, 0) : Infinity;
+
+  // Verbouwing meefinancieren: LTV-grens wordt gebaseerd op marktwaarde NA verbouwing
+  const verbouwFinancieren = document.getElementById('verbouw-financieren').checked;
+  const verbouwKosten      = verbouwFinancieren ? (parseFloat(document.getElementById('verbouw-kosten').value) || 0) : 0;
+  const verbouwMeerwaarde  = verbouwFinancieren ? (parseFloat(document.getElementById('verbouw-meerwaarde').value) || 0) : 0;
+  const woningNaVerbouw    = woning + verbouwMeerwaarde;
+  const maxLTV             = woning > 0 ? woningNaVerbouw * LTV_MAX : Infinity;
+  // Benodigde lening = woning + verbouwkosten die niet uit eigen middelen komen
+  const verbouwUitEigen    = verbouwFinancieren ? Math.min(verbouwKosten, Math.max(overwaardePos - owInleg, 0) + inbreng) : 0;
+  const verbouwMeeFinancieren = verbouwFinancieren ? Math.max(verbouwKosten - verbouwUitEigen, 0) : 0;
+  const benodigdeLening    = woning > 0
+    ? Math.max(woning - eigenTotaal + verbouwMeeFinancieren, 0)
+    : Infinity;
+
+  // Toon verbouw-info
+  if (woning > 0) {
+    document.getElementById('ltv-na-verbouw').textContent = fmtE(woningNaVerbouw);
+    const extraRuimte = Math.max(maxLTV - (woning - eigenTotaal), 0);
+    document.getElementById('verbouw-extra').textContent = verbouwFinancieren ? fmtE(Math.min(extraRuimte, verbouwMeeFinancieren)) : '—';
+  }
 
   // Impact schulden op hypotheek (verschil met/zonder schulden)
   const maxLTI_zonderSchuld = maxLeningVanJaarlast(maxJaarlast, toetsrente, looptijd);
@@ -728,15 +819,63 @@ function bereken() {
   }
 }
 
+// ─── Overwaarde splitsing ────────────────────────────────────────────────────
+function getOverwaarde() {
+  if (situatie !== 'doorstromer') return 0;
+  const verkoop  = parseFloat(document.getElementById('verkoopprijs').value) || 0;
+  const resthyp  = parseFloat(document.getElementById('resthypotheek').value) || 0;
+  return Math.max(verkoop - resthyp, 0);
+}
+
+function berekenOwSplit() {
+  const overwaarde = getOverwaarde();
+  const inleg = parseFloat(document.getElementById('ow-inleg').value) || 0;
+  const verbouwReserve = Math.max(overwaarde - inleg, 0);
+  document.getElementById('ow-verbouw').textContent = fmtE(verbouwReserve);
+  const warning = document.getElementById('ow-warning');
+  if (inleg > overwaarde) {
+    warning.style.display = 'block';
+  } else {
+    warning.style.display = 'none';
+  }
+  bereken();
+}
+
+function toggleVerbouwFinancieren() {
+  const aan = document.getElementById('verbouw-financieren').checked;
+  document.getElementById('block-verbouw-fin').classList.toggle('open', aan);
+  bereken();
+}
+
+function updateOwSplitBlok() {
+  // Toon blok alleen bij doorstromer met positieve overwaarde
+  const blok = document.getElementById('block-overwaarde-split');
+  const overwaarde = getOverwaarde();
+  blok.classList.toggle('open', situatie === 'doorstromer' && overwaarde > 0);
+  // Reset inleg als overwaarde 0 wordt
+  if (overwaarde === 0) {
+    document.getElementById('ow-inleg').value = 0;
+    document.getElementById('ow-verbouw').textContent = fmtE(0);
+  }
+  // Cap inleg op overwaarde
+  const inlegEl = document.getElementById('ow-inleg');
+  const inleg = parseFloat(inlegEl.value) || 0;
+  if (inleg > overwaarde) {
+    inlegEl.value = overwaarde;
+  }
+  berekenOwSplit();
+}
+
 // ─── LocalStorage: sla alle veldwaarden op ───────────────────────────────────
 const VELD_IDS = [
   'inkomen1','inkomen2','rente','periode','looptijd','type',
   'woningwaarde','eigeninbreng',
   'verkoopprijs','resthypotheek','huidigelast',
+  'ow-inleg','verbouw-kosten','verbouw-meerwaarde',
   'rood-limiet','cc-limiet','dk-limiet','pl-mnd',
   'studie-schuld','lease-mnd','alim-mnd','klarna-mnd'
 ];
-const TOGGLE_IDS = ['partner','energielabel','dubbelwonen'];
+const TOGGLE_IDS = ['partner','energielabel','dubbelwonen','verbouw-financieren'];
 const STORAGE_KEY = 'hypotheek-berekener-v1';
 
 function slaOp() {
@@ -775,7 +914,12 @@ function laadOp() {
   if (data['dubbelwonen']) {
     document.getElementById('block-huidigelast').classList.add('open');
   }
+  if (data['verbouw-financieren']) {
+    document.getElementById('block-verbouw-fin').classList.add('open');
+  }
   updateRente(document.getElementById('rente').value);
+  // Herstel ow-split blok zichtbaarheid na laden
+  setTimeout(updateOwSplitBlok, 0);
 }
 
 function resetAlles() {
