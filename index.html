@@ -178,6 +178,57 @@
             <div class="input-row"><span class="prefix">€</span><input type="number" id="huidigelast" value="800" min="0" step="50" oninput="bereken()"></div>
           </div>
         </div>
+        <div class="card full">
+          <div class="card-label-row" style="margin-bottom:.5rem;">
+            <label>Rente meenemen?</label>
+            <span class="info-btn" onclick="toggleTip('tip-meenemen')">i</span>
+            <div class="tooltip" id="tip-meenemen">
+              Sommige geldverstrekkers staan toe dat je een hypotheekdeel met een <strong>gunstige (lage) rente</strong> van je huidige woning meeneemt naar de nieuwe hypotheek. De contractrente en resterende looptijd van dat deel blijven dan gelijk.<br><br>
+              De bank toetst de maandlast van het meegenomen deel <em>plus</em> het nieuwe deel samen tegen je inkomen. Alleen beschikbaar bij dezelfde geldverstrekker en doorgaans tot maximaal de resterende hypotheekschuld.<br><br>
+              Vul de rentevaste periode in om te bepalen of de wettelijke <strong>toetsvloer van 5%</strong> van toepassing is (alleen bij &lt;10 jaar resterende RVP).
+            </div>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label-text">Ik neem een bestaand hypotheekdeel mee naar de nieuwe hypotheek (lage rente behouden)</span>
+            <label class="toggle">
+              <input type="checkbox" id="meenemen" onchange="toggleMeenemen()">
+              <span class="toggle-track"></span><span class="toggle-thumb"></span>
+            </label>
+          </div>
+          <div class="conditional" id="block-meenemen" style="margin-top:.75rem;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.65rem;">
+              <div>
+                <span class="schuld-sub">Meegenomen bedrag</span>
+                <div class="input-row" style="margin-top:.3rem;"><span class="prefix">€</span>
+                  <input type="number" id="meeneem-bedrag" value="100000" min="0" step="5000" oninput="bereken()">
+                </div>
+              </div>
+              <div>
+                <span class="schuld-sub">Rente meegenomen deel</span>
+                <div class="input-row" style="margin-top:.3rem;">
+                  <input type="number" id="meeneem-rente" value="2.50" min="0" max="10" step="0.05" oninput="bereken()">
+                  <span class="prefix">%</span>
+                </div>
+              </div>
+              <div>
+                <span class="schuld-sub">Resterende rentevaste periode (jr)</span>
+                <div class="input-row" style="margin-top:.3rem;">
+                  <input type="number" id="meeneem-rvp" value="8" min="1" max="30" step="1" oninput="bereken()">
+                </div>
+              </div>
+              <div>
+                <span class="schuld-sub">Resterende looptijd deel (jr)</span>
+                <div class="input-row" style="margin-top:.3rem;">
+                  <input type="number" id="meeneem-looptijd" value="22" min="1" max="30" step="1" oninput="bereken()">
+                </div>
+              </div>
+            </div>
+            <div style="font-size:.75rem;color:var(--muted);padding:.5rem .65rem;background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.18);border-radius:6px;">
+              Maandlast meegenomen deel: <strong id="meeneem-maandlast" style="color:var(--accent2);">—</strong>
+              &nbsp;·&nbsp; Toetsrente meegenomen deel: <strong id="meeneem-toetsrente" style="color:var(--accent2);">—</strong>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -546,6 +597,7 @@
       <div class="sub">Maximale hypotheek (indicatie)</div>
       <div class="amount" id="maxHypotheek">€ —</div>
       <div class="note" id="beperkingNote"></div>
+      <div class="note" id="meeneemNote" style="display:none;margin-top:.2rem;color:var(--accent2);font-size:.8rem;"></div>
     </div>
     <div class="result-grid">
       <div class="result-item">
@@ -715,6 +767,26 @@ function bereken() {
   const dubbel      = document.getElementById('dubbelwonen').checked;
   const huidigelast = parseFloat(document.getElementById('huidigelast').value) || 0;
 
+  // Rente meenemen
+  const meenemen = situatie === 'doorstromer' && document.getElementById('meenemen').checked;
+  const meeneemBedrag   = meenemen ? (parseFloat(document.getElementById('meeneem-bedrag').value) || 0) : 0;
+  const meeneemRenteP   = meenemen ? (parseFloat(document.getElementById('meeneem-rente').value) || 0) / 100 : 0;
+  const meeneemRvp      = meenemen ? (parseInt(document.getElementById('meeneem-rvp').value) || 10) : 0;
+  const meeneemLooptijd = meenemen ? (parseInt(document.getElementById('meeneem-looptijd').value) || 30) : 0;
+
+  let meeneemMaandlast = 0;
+  let meeneemToetsrente = 0;
+  if (meenemen && meeneemBedrag > 0 && meeneemLooptijd > 0) {
+    meeneemToetsrente = getToetsrente(meeneemRenteP, meeneemRvp);
+    meeneemMaandlast = meeneemBedrag * annuitairFactor(meeneemToetsrente / 12, meeneemLooptijd * 12);
+  }
+  const meeneemMaandlastEl = document.getElementById('meeneem-maandlast');
+  const meeneemToetsrenteEl = document.getElementById('meeneem-toetsrente');
+  if (meeneemMaandlastEl) meeneemMaandlastEl.textContent = meenemen && meeneemBedrag > 0 ? fmtE(meeneemMaandlast) + ' / mnd' : '—';
+  if (meeneemToetsrenteEl) meeneemToetsrenteEl.textContent = meenemen && meeneemBedrag > 0
+    ? (meeneemToetsrente * 100).toFixed(2).replace('.', ',') + '%' + (meeneemToetsrente > meeneemRenteP ? ' ⚠ toetsvloer' : '')
+    : '—';
+
   // Schulden
   const schuldenMaand = berekenSchulden();
   const totSchuldenMaand = schuldenMaand + (situatie === 'doorstromer' && dubbel ? huidigelast : 0);
@@ -747,7 +819,10 @@ function bereken() {
   const beschikbaar  = Math.max(maxJaarlast - totSchuldenMaand * 12, 0);
 
   const toetsrente      = getToetsrente(rente, periode);
-  const maxLTI          = maxLeningVanJaarlast(beschikbaar, toetsrente, looptijd);
+  // Meegenomen deel reduceert beschikbare jaarlast voor het nieuwe deel
+  const beschikbaarVoorNieuw = Math.max(beschikbaar - meeneemMaandlast * 12, 0);
+  const maxNieuwDeel    = maxLeningVanJaarlast(beschikbaarVoorNieuw, toetsrente, looptijd);
+  const maxLTI          = meenemen ? maxNieuwDeel + meeneemBedrag : maxNieuwDeel;
 
   // Verbouwing meefinancieren: LTV-grens wordt gebaseerd op marktwaarde NA verbouwing
   const verbouwFinancieren = document.getElementById('verbouw-financieren').checked;
@@ -795,7 +870,15 @@ function bereken() {
     beperkingNote = 'Beperkt door: woningwaarde (LTV 100%)';
   }
 
-  const maandlast = maxHypotheek * annuitairFactor(rente / 12, looptijd * 12);
+  let maandlast;
+  if (meenemen && meeneemBedrag > 0 && meeneemLooptijd > 0) {
+    const meegenomenActueel = Math.min(meeneemBedrag, maxHypotheek);
+    const nieuwActueel = Math.max(maxHypotheek - meegenomenActueel, 0);
+    maandlast = nieuwActueel * annuitairFactor(rente / 12, looptijd * 12)
+              + meegenomenActueel * annuitairFactor(meeneemRenteP / 12, meeneemLooptijd * 12);
+  } else {
+    maandlast = maxHypotheek * annuitairFactor(rente / 12, looptijd * 12);
+  }
   const kkBedrag  = woning > 0 ? woning * KK_PCT : 0;
   const kkGedekt  = eigenTotaal >= kkBedrag;
 
@@ -816,6 +899,19 @@ function bereken() {
     kkEl.className = 'r-value ' + (kkGedekt ? 'green' : 'red');
   } else {
     kkEl.textContent = '—'; kkEl.className = 'r-value';
+  }
+
+  // Toon uitsplitsing meegenomen vs. nieuw deel
+  const meeneemNoteEl = document.getElementById('meeneemNote');
+  if (meenemen && meeneemBedrag > 0 && maxHypotheek > 0) {
+    const meegenomenActueel = Math.min(meeneemBedrag, maxHypotheek);
+    const nieuwActueel = Math.max(maxHypotheek - meegenomenActueel, 0);
+    meeneemNoteEl.style.display = 'block';
+    meeneemNoteEl.textContent =
+      'Meegenomen: ' + fmtE(meegenomenActueel) + ' @ ' + (meeneemRenteP * 100).toFixed(2).replace('.', ',') + '% rente'
+      + '  +  Nieuw deel: ' + fmtE(nieuwActueel) + ' @ ' + (rente * 100).toFixed(2).replace('.', ',') + '% rente';
+  } else {
+    meeneemNoteEl.style.display = 'none';
   }
 }
 
@@ -838,6 +934,12 @@ function berekenOwSplit() {
   } else {
     warning.style.display = 'none';
   }
+  bereken();
+}
+
+function toggleMeenemen() {
+  const aan = document.getElementById('meenemen').checked;
+  document.getElementById('block-meenemen').classList.toggle('open', aan);
   bereken();
 }
 
@@ -873,9 +975,10 @@ const VELD_IDS = [
   'verkoopprijs','resthypotheek','huidigelast',
   'ow-inleg','verbouw-kosten','verbouw-meerwaarde',
   'rood-limiet','cc-limiet','dk-limiet','pl-mnd',
-  'studie-schuld','lease-mnd','alim-mnd','klarna-mnd'
+  'studie-schuld','lease-mnd','alim-mnd','klarna-mnd',
+  'meeneem-bedrag','meeneem-rente','meeneem-rvp','meeneem-looptijd'
 ];
-const TOGGLE_IDS = ['partner','energielabel','dubbelwonen','verbouw-financieren'];
+const TOGGLE_IDS = ['partner','energielabel','dubbelwonen','verbouw-financieren','meenemen'];
 const STORAGE_KEY = 'hypotheek-berekener-v1';
 
 function slaOp() {
@@ -916,6 +1019,9 @@ function laadOp() {
   }
   if (data['verbouw-financieren']) {
     document.getElementById('block-verbouw-fin').classList.add('open');
+  }
+  if (data['meenemen']) {
+    document.getElementById('block-meenemen').classList.add('open');
   }
   updateRente(document.getElementById('rente').value);
   // Herstel ow-split blok zichtbaarheid na laden
